@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Eliminación de cuenta</title>
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0d47a1;
+  margin: 0;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+
+  width: 100%;
+  max-width: 380px;
+
+  box-sizing: border-box;
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 12px;
+  color: #c62828;
+}
+
+p {
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.delete-btn {
+  background: #c62828;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.cancel-btn {
+  background: #ccc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Eliminar cuenta</h2>
+
+  <p>
+    Esta acción es <strong>permanente</strong>.  
+    Se eliminará tu cuenta y todos tus datos asociados.
+  </p>
+
+  <p>
+    Para continuar, confirma tu identidad ingresando tu correo y contraseña.
+  </p>
+
+  <input id="email" placeholder="Correo electrónico">
+  <input id="password" type="password" placeholder="Contraseña">
+
+  <button class="delete-btn" onclick="confirmDeletion()">
+    Confirmar eliminación
+  </button>
+
+  <button class="cancel-btn" onclick="window.location.href='index.html'">
+    Cancelar
+  </button>
+</div>
+
+<script>
+// ================= FIREBASE =================
+firebase.initializeApp({
+  apiKey: "AIzaSyC1ACs5I89Et9SaA0tNuUthZmqlnGLVxuY",
+  authDomain: "gamerush-1203.firebaseapp.com",
+  databaseURL: "https://gamerush-1203-default-rtdb.firebaseio.com",
+  projectId: "gamerush-1203",
+  storageBucket: "gamerush-1203.appspot.com"
+});
+
+const auth = firebase.auth();
+const db = firebase.database();
+
+// ================= ELIMINACIÓN =================
+function confirmDeletion() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    alert("Completa todos los campos");
+    return;
+  }
+
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("No hay una sesión activa");
+    return;
+  }
+
+  // Reautenticación obligatoria (requisito Google Play)
+  const credential = firebase.auth.EmailAuthProvider.credential(
+    email,
+    password
+  );
+
+  user.reauthenticateWithCredential(credential)
+    .then(() => {
+      const uid = user.uid;
+
+      // Eliminar datos en Database
+      const userRef = db.ref(`users/${uid}`);
+
+      return userRef.remove().then(() => uid);
+    })
+    .then(uid => {
+      // Eliminar Auth
+      return auth.currentUser.delete();
+    })
+    .then(() => {
+      alert("Tu cuenta ha sido eliminada correctamente.");
+      window.location.href = "index.html";
+    })
+    .catch(error => {
+      console.error(error);
+      alert("Error al eliminar la cuenta: " + error.message);
+    });
+}
+</script>
+
+</body>
+</html>
